@@ -188,12 +188,20 @@ def media_control(cmd: str) -> str:
 
 def volume_set(value: int) -> str:
     try:
-        subprocess.run(["powershell", "-Command",
-                        f"(New-Object -ComObject WScript.Shell).SendKeys([char]175)"], check=False)
-        # Note: a true volume setter would need CoreAudio – here we just report.
-        return f"Громкость установлена на {value}% (упрощённо)."
+        value = max(0, min(100, int(value)))
+        from pycaw.pycaw import AudioUtilities
+        device = AudioUtilities.GetSpeakers()
+        endpoint = device.EndpointVolume
+        endpoint.SetMasterVolumeLevelScalar(value / 100.0, None)
+        new_level = device.volume_percent
+        return f"Громкость установлена на {value}% (актуально: {new_level:.1f}%)."
     except Exception as e:
-        return f"Не удалось изменить громкость: {e}"
+        try:
+            subprocess.run(["powershell", "-Command",
+                            "(New-Object -ComObject WScript.Shell).SendKeys([char]175)"], check=False)
+            return f"Точная настройка не удалась ({value}%), отправлено нажатие громче."
+        except Exception as e2:
+            return f"Не удалось изменить громкость: {e} (fallback: {e2})"
 
 def mute() -> str:
     try:

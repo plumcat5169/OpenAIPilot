@@ -17,6 +17,7 @@ except Exception as e:
 
 # Import the model provider based on configuration lazily inside main()
 from .config import load_config
+from .actions import handle_command
 
 
 def get_model_provider():
@@ -108,13 +109,20 @@ def main():
                 if user_input.strip().lower() in ("exit", "quit"):
                     break
                 try:
+                    result, executed = handle_command(user_input)
+                except Exception as e:
+                    logger.error(f"Error in handle_command: {e}")
+                    result, executed = "", False
+                if executed:
+                    if result:
+                        print(f"System: {result}")
+                    continue
+                try:
                     resp = model.generate(user_input)
                 except Exception as e:
                     logger.error(f"Error during model generate: {e}")
                     resp = ""
                 print(f"Model: {resp}")
-                if resp:
-                    handle_response(resp)
         except (KeyboardInterrupt, EOFError):
             logger.info("Chat loop interrupted by user/EoF.")
     else:
