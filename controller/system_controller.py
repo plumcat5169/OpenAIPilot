@@ -84,15 +84,12 @@ class SystemController:
             logger.error(f"Failed to launch {exe_path}: {e}")
 
     def open_via_start_menu(self, app_name: str):
-        """Open an application using the Windows Start menu search (Win+S)."""
-        logger.info(f"Opening '{app_name}' via Windows Search")
-        # Press Win+S to focus the search bar (Win alone also works but Win+S is explicit)
-        pyautogui.hotkey('win', 's')
-        time.sleep(0.5)
-        pyautogui.typewrite(app_name, interval=0.05)
-        time.sleep(0.5)
-        pyautogui.press('enter')
-        logger.debug(f"Sent keystrokes to start {app_name}")
+        """Open an application using the Windows Start command (more reliable than UI automation)."""
+        logger.info(f"Opening '{app_name}' via Windows 'start' command")
+        try:
+            subprocess.Popen(f"start {app_name}", shell=True)
+        except Exception as e:
+            logger.error(f"Failed to start {app_name}: {e}")
 
     # ---------------------------------------------------------------------
     # High‑level orchestration
