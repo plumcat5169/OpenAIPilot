@@ -83,27 +83,58 @@ class SystemController:
         except Exception as e:
             logger.error(f"Failed to launch {exe_path}: {e}")
 
+    def _find_shortcut(self, app_name: str) -> str | None:
+        """Search common Start Menu directories for a shortcut matching app_name."""
+        candidate_dirs = []
+        for env_var in ("APPDATA", "PROGRAMDATA"):
+            root = os.environ.get(env_var)
+            if not root:
+                continue
+            candidate_dirs.append(Path(root) / "Microsoft" / "Windows" / "Start Menu" / "Programs")
+        for d in candidate_dirs:
+            if not d.is_dir():
+                continue
+            for root, _, files in os.walk(d):
+                for f in files:
+                    if f.lower() == app_name.lower() + ".lnk":
+                        return os.path.join(root, f)
+        return None
+
     def open_via_start_menu(self, app_name: str):
-        """Open an application using the Windows Start command (more reliable than UI automation)."""
-        logger.info(f"Opening '{app_name}' via Windows 'start' command")
-        try:
-            subprocess.Popen(f"start {app_name}", shell=True)
-        except Exception as e:
-            logger.error(f"Failed to start {app_name}: {e}")
+        """Open an application using the Windows Start menu search (Win+S)."""
+        logger.info(f"Opening '{app_name}' via Windows Search")
+        # Press Win+S to focus the search bar (Win alone also works but Win+S is explicit)
+        pyautogui.hotkey('win', 's')
+        time.sleep(0.5)
+        pyautogui.typewrite(app_name, interval=0.05)
+        time.sleep(0.5)
+        pyautogui.press('enter')
+        logger.debug(f"Sent keystrokes to start {app_name}")
 
     # ---------------------------------------------------------------------
     # High‑level orchestration
     # ---------------------------------------------------------------------
     def ensure_running(self, app_name: str, exe_name: str):
         """Make sure *app_name* is running.
-
-        A quick path: if the process is already active, do nothing.
-        Otherwise we immediately use the Windows Start menu search (Win+S)
-        to avoid any lengthy file‑system scanning.
+        - If already running, do nothing.
+        - Try to resolve shortcut first (fast).
+        - If no shortcut, use UI automation (Win+S) to open.
         """
         if self.is_process_running(exe_name):
             logger.info(f"{app_name} is already running.")
             return
 
-        logger.info(f"{app_name} is not running – opening via Windows Search now.")
+        logger.info(f"{app_name} is not running – attempting to open it now.")
+
+        # Try Start Menu shortcut (fast, reliable if present)
+        shortcut = self._find_shortcut(app_name)
+        if shortcut:
+            try:
+                os.startfile(shortcut)
+                logger.info(f"Launched via shortcut: {shortcut}")
+                return
+            except Exception as e:
+                logger.error(f"Failed to launch via shortcut: {e}")
+
+        # Fall back to UI automation
         self.open_via_start_menu(app_name)
