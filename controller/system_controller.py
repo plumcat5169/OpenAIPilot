@@ -100,17 +100,13 @@ class SystemController:
     def ensure_running(self, app_name: str, exe_name: str):
         """Make sure *app_name* is running.
 
-        - Checks if a process with *exe_name* is already active.
-        - If not, tries to locate the executable on disk and launch it.
-        - If the executable cannot be located, falls back to opening the app via the Start menu.
+        A quick path: if the process is already active, do nothing.
+        Otherwise we immediately use the Windows Start menu search (Win+S)
+        to avoid any lengthy file‑system scanning.
         """
         if self.is_process_running(exe_name):
             logger.info(f"{app_name} is already running.")
             return
 
-        logger.info(f"{app_name} is not running – attempting to start it.")
-        exe_path = self.find_executable(exe_name)
-        if exe_path:
-            self.launch_application(exe_path)
-        else:
-            self.open_via_start_menu(app_name)
+        logger.info(f"{app_name} is not running – opening via Windows Search now.")
+        self.open_via_start_menu(app_name)
