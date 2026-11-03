@@ -101,9 +101,26 @@ class SystemController:
         return None
 
     def open_via_start_menu(self, app_name: str):
-        """Open an application using the Windows Start menu search (Win+S)."""
-        logger.info(f"Opening '{app_name}' via Windows Search")
-        # Press Win+S to focus the search bar (Win alone also works but Win+S is explicit)
+        """Try the fastest reliable ways first, fall back to UI automation."""
+        logger.info(f"Opening '{app_name}' via fast Windows shell shortcut")
+        # 1) Telegram is typically registered under the tg:// protocol
+        try:
+            subprocess.run("start tg:", shell=True, check=False)
+        except Exception as e:
+            logger.debug(f"'start tg:' failed: {e}")
+
+        # 2) Also try a Start Menu shortcut (file based)
+        try:
+            shortcut = self._find_shortcut(app_name)
+            if shortcut:
+                os.startfile(shortcut)
+                logger.info(f"Launched via shortcut: {shortcut}")
+                return
+        except Exception as e:
+            logger.debug(f"Shortcut launch failed: {e}")
+
+        # 3) Only if nothing above clearly worked: UI automation fallback
+        logger.info(f"Falling back to Win+S UI automation for '{app_name}'")
         pyautogui.hotkey('win', 's')
         time.sleep(0.5)
         pyautogui.typewrite(app_name, interval=0.05)

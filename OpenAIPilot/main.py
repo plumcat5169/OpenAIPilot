@@ -115,8 +115,8 @@ def main():
                 print(f"Model: {resp}")
                 if resp:
                     handle_response(resp)
-        except KeyboardInterrupt:
-            logger.info("Chat loop interrupted by user.")
+        except (KeyboardInterrupt, EOFError):
+            logger.info("Chat loop interrupted by user/EoF.")
     else:
         logger.warning("Model provider not available – chat interface disabled.")
 

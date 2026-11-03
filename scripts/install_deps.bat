@@ -1,19 +1,19 @@
 @echo off
-SET "VENV_DIR=venv"
+SET "PROJECT_ROOT=%~dp0.."
+SET "VENV_DIR=%PROJECT_ROOT%\venv"
 
 IF NOT EXIST "%VENV_DIR%" (
     echo Creating virtual environment...
     python -m venv "%VENV_DIR%"
 )
 
-CALL "%VENV_DIR%\Scripts\activate"
+cd /d "%PROJECT_ROOT%"
 
 echo Upgrading pip...
-python -m pip install --upgrade pip
+"%VENV_DIR%\Scripts\python" -m pip install --upgrade pip
 
 echo Installing dependencies from requirements.txt...
-cd /d "%~dp0.."
-pip install -r requirements.txt
+"%VENV_DIR%\Scripts\pip" install -r requirements.txt
 
 echo Dependencies installed successfully.
 pause

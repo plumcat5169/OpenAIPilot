@@ -1,5 +1,6 @@
 @echo off
-SET "VENV_DIR=venv"
+SET "PROJECT_ROOT=%~dp0.."
+SET "VENV_DIR=%PROJECT_ROOT%\venv"
 
 IF NOT EXIST "%VENV_DIR%" (
     echo Virtual environment not found. Run install_deps.bat first.
@@ -7,8 +8,7 @@ IF NOT EXIST "%VENV_DIR%" (
     exit /b 1
 )
 
-CALL "%VENV_DIR%\Scripts\activate"
+cd /d "%PROJECT_ROOT%"
+"%VENV_DIR%\Scripts\python.exe" -m OpenAIPilot.main
 
-cd /d "%~dp0.."
-python -m OpenAIPilot.main
 pause
