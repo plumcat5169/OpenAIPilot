@@ -1,0 +1,8 @@
+# Project dependencies
+
+pyautogui==0.9.54
+psutil==5.9.8
+requests==2.32.3
+openai==1.12.0
+SpeechRecognition==3.10.4
+keyboard==0.13.5
